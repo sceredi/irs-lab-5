@@ -5,6 +5,7 @@
         "step",
         "light_controller",
         "reset",
-        "destroy"
+        "destroy",
+        "robot"
     ]
 }

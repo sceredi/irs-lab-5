@@ -13,9 +13,9 @@ There were very few constraints:
 
 * Solution implemented
 The implemented solution is a probabilistic finite state machine, with just two states, *standing* and *walking*.
-- When in the standing state the robot has a probability src_lua[:exports code]{Pw = math.max(PWmin, W - beta * N)} to change state
+- When in the standing state the robot has a probability src_lua{Pw = math.max(PWmin, W - beta * N)} to change state
   into walking
-- When in the walking state the robot has a probability src_lua[:exports code]{Ps = math.min(PSmax, S + alpha * N)} to change state
+- When in the walking state the robot has a probability src_lua{Ps = math.min(PSmax, S + alpha * N)} to change state
   into standing
 For each robot N is the number of standing robots that get sensed around, in an area of 30cm. Basically the more
 standing robots a given robot has near him the higher the probability that he will be standing still as well.

@@ -1,7 +1,6 @@
 -- Put your global variables here
 local robot_wrapper = require("src.wrapper.robot_wrapper")
 local perceptual_schemas = require("src.perceptual_schemas")
-local logger = require("src.wrapper.logger")
 local vector = require("src.vector")
 local utils = require("src.utils")
 
@@ -9,7 +8,9 @@ local MOVE_STEPS = 5
 local MAX_VELOCITY = 10
 local MAXRANGE = 30
 
-local STATE = 0
+local STATE = {
+	STANDING = false,
+}
 
 local PSmax = 0.99
 local S = 0.01
@@ -82,19 +83,36 @@ local function random_walk()
 	return left_vel, right_vel
 end
 
-local function do_the_stuff()
-	local N = CountRAB()
+local function stand()
+	return 0, 0
+end
+
+local function moving(N)
 	Ps = math.min(PSmax, S + alpha * N)
-	Pw = math.max(PWmin, W - beta * N)
-	Psum = Ps + Pw
-	local p = Ps / Psum
 	local t = robot_wrapper.random.uniform(0, 1)
-	if t <= p then
-		STATE = 1
-		left_v, right_v = 0, 0
+	if t <= Ps then
+		STATE.STANDING = true
+		return stand()
+	end
+	return random_walk()
+end
+
+local function standing(N)
+	Pw = math.max(PWmin, W - beta * N)
+	local t = robot_wrapper.random.uniform(0, 1)
+	if t <= Pw then
+		STATE.STANDING = false
+		return random_walk()
+	end
+	return stand()
+end
+
+local function fsm_step()
+	local N = CountRAB()
+	if STATE.STANDING then
+		left_v, right_v = standing(N)
 	else
-		STATE = 0
-		left_v, right_v = random_walk()
+		left_v, right_v = moving(N)
 	end
 	robot_wrapper.wheels.set_velocity(left_v, right_v)
 end
@@ -104,9 +122,10 @@ end
 function step()
 	n_steps = n_steps + 1
 	-- if n_steps % MOVE_STEPS == 0 then
-	do_the_stuff()
+	fsm_step()
 	-- end
-	robot.range_and_bearing.set_data(1, STATE)
+	local state = STATE.STANDING and 1 or 0
+	robot.range_and_bearing.set_data(1, state)
 end
 
 --[[ This function is executed every time you press the 'reset'

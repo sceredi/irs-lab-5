@@ -1,0 +1,37 @@
+#+title: IRS 5th lab activity report
+#+author: Simone Ceredi
+#+date: <2024-05-11 Sat>
+
+* Objective
+The objective of the activity is to implement an aggregation behaviour, i.e. the swarm behaviour
+consisting in gathering in one place
+** Constraints
+There were very few constraints:
+- The robots should avoid collisions
+- The range and bearing communication system has a limited range, preferably 30cm
+- All robots must have the same controller
+
+* Solution implemented
+The implemented solution is a probabilistic finite state machine, with just two states, *standing* and *walking*.
+- When in the standing state the robot has a probability `lua Pw = math.max(PWmin, W - beta * N)` to change state
+  into walking
+- When in the walking state the robot has a probability `lua Ps = math.min(PSmax, S + alpha * N)` to change state
+  into standing
+For each robot N is the number of standing robots that get sensed around, in an area of 30cm. Basically the more
+standing robots a given robot has near him the higher the probability that he will be standing still as well.
+So the standing behaviour is very simple, it just stops the robot wheels.
+The walking behaviour is more interesting in the fact that it was implemented using motor schemas. The robot senses
+a uniform attractive field towards the front, and the field gets perturbated by obstacles, as the closest sensed
+obstacle creates a repulsive field for the robot.
+
+* Problems encountered
+** Parameter optimization
+One of the biggest obstacles when trying to find a decent solution has been the optimization of the parameters.
+Even though there were only 6 parameters to optimize it was difficult to understand how changing a value affected
+the simulation.
+** Random walk
+After finding a good value for the parameters the biggest improvement in the behaviour of the robot was made
+possible by switching from random walking to going straight and just avoiding obstacles when in the walking state.
+The problem with random walking was that the robot were moving at a snail pace so it was hard, when small clusters
+of robot were forming they were easily destructed before the amount of robot in the cluster was big enough to make
+it "stable". With the motor schemas approach the clusters started being formed earlier and were more "stable".

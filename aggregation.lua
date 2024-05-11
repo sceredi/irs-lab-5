@@ -87,7 +87,7 @@ local function stand()
 	return 0, 0
 end
 
-local function moving(N)
+local function walking(N)
 	Ps = math.min(PSmax, S + alpha * N)
 	local t = robot_wrapper.random.uniform(0, 1)
 	if t <= Ps then
@@ -112,7 +112,7 @@ local function fsm_step()
 	if STATE.STANDING then
 		left_v, right_v = standing(N)
 	else
-		left_v, right_v = moving(N)
+		left_v, right_v = walking(N)
 	end
 	robot_wrapper.wheels.set_velocity(left_v, right_v)
 end

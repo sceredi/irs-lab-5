@@ -28,7 +28,9 @@ obstacle creates a repulsive field for the robot.
 ** Parameter optimization
 One of the biggest obstacles when trying to find a decent solution has been the optimization of the parameters.
 Even though there were only 6 parameters to optimize it was difficult to understand how changing a value affected
-the simulation.
+the simulation. In the end the values used were PSmax = 0.99, S = 0.01, alpha = 0.1, PWmin = 0.005, W = 0.1 and
+beta = 0.05, unchanged from the suggested ones, but while the swarm wasn't behaving as expected finding the reason
+proved to be very tough.
 ** Random walk
 After finding a good value for the parameters the biggest improvement in the behaviour of the robot was made
 possible by switching from random walking to going straight and just avoiding obstacles when in the walking state.

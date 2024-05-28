@@ -4,12 +4,11 @@ local perceptual_schemas = require("src.perceptual_schemas")
 local vector = require("src.vector")
 local utils = require("src.utils")
 
-local MOVE_STEPS = 5
 local MAX_VELOCITY = 10
 local MAXRANGE = 30
 
 local STATE = {
-	STANDING = false,
+	STOPPED = false,
 }
 
 local PSmax = 0.99
@@ -24,8 +23,6 @@ local n_steps = 0
 local left_v = 0
 local right_v = 0
 
---[[ This function is executed every time you press the 'execute'
-     button ]]
 function init()
 	left_v = 0
 	right_v = 0
@@ -33,6 +30,7 @@ function init()
 	n_steps = 0
 end
 
+-- uniform_field used to move the robot around
 local function uniform_field(strength, angle)
 	local length = 0
 	if strength > 0 then
@@ -43,6 +41,7 @@ local function uniform_field(strength, angle)
 	return { length = length, angle = angle }
 end
 
+-- repulsive_field used to avoid obstacles
 local function repulsive_field(strength, angle)
 	local length = 0
 	if strength > 0 then
@@ -53,6 +52,7 @@ local function repulsive_field(strength, angle)
 	return { length = length, angle = -angle }
 end
 
+-- wrapper around the perceptual schema
 local function avoid_obstacles()
 	local closest_prox = perceptual_schemas.closest_proximity_sensor()
 	return { strength = closest_prox.length, angle = closest_prox.angle }
@@ -69,6 +69,7 @@ local function CountRAB()
 	return number_robot_sensed
 end
 
+-- random_walk that really isn't very random as the robot goes straight and avoids obstacles
 local function random_walk()
 	local obstacle_polar_val = avoid_obstacles()
 	local obstacle_repulsion = repulsive_field(obstacle_polar_val.strength, obstacle_polar_val.angle)
@@ -87,62 +88,51 @@ local function stand()
 	return 0, 0
 end
 
-local function walking(N)
+-- everything the robot has to do in a tick while in the wandering state
+local function wandering(N)
 	Ps = math.min(PSmax, S + alpha * N)
 	local t = robot_wrapper.random.uniform(0, 1)
 	if t <= Ps then
-		STATE.STANDING = true
+		STATE.STOPPED = true
 		return stand()
 	end
 	return random_walk()
 end
 
+-- everything the robot has to do in a tick while in the standing state
 local function standing(N)
 	Pw = math.max(PWmin, W - beta * N)
 	local t = robot_wrapper.random.uniform(0, 1)
 	if t <= Pw then
-		STATE.STANDING = false
+		STATE.STOPPED = false
 		return random_walk()
 	end
 	return stand()
 end
 
-local function fsm_step()
+-- all entrance point for the finite state automaton
+local function fsa_step()
 	local N = CountRAB()
-	if STATE.STANDING then
+	if STATE.STOPPED then
 		left_v, right_v = standing(N)
 	else
-		left_v, right_v = walking(N)
+		left_v, right_v = wandering(N)
 	end
 	robot_wrapper.wheels.set_velocity(left_v, right_v)
 end
 
---[[ This function is executed at each time step
-     It must contain the logic of your controller ]]
 function step()
 	n_steps = n_steps + 1
-	-- if n_steps % MOVE_STEPS == 0 then
-	fsm_step()
-	-- end
-	local state = STATE.STANDING and 1 or 0
+	fsa_step()
+	local state = STATE.STOPPED and 1 or 0
 	robot.range_and_bearing.set_data(1, state)
 end
 
---[[ This function is executed every time you press the 'reset'
-     button in the GUI. It is supposed to restore the state
-     of the controller to whatever it was right after init() was
-     called. The state of sensors and actuators is reset
-     automatically by ARGoS. ]]
 function reset()
 	left_v = MAX_VELOCITY
 	right_v = 0
-	-- robot.wheels.set_velocity(left_v, right_v)
 	robot_wrapper.wheels.set_velocity(left_v, right_v)
 	n_steps = 0
 end
 
---[[ This function is executed only once, when the robot is removed
-     from the simulation ]]
-function destroy()
-	-- put your code here
-end
+function destroy() end
